@@ -2,6 +2,58 @@ from pathlib import Path
 
 STUDYOS_MEMORY_FILENAME = "studyos-course.md"
 
+AUTOMATION_MEMORY_SECTION = """## Codex Runtime And Automations
+
+This gateway runs inside an authenticated Codex runtime. When students ask to
+set up an automation, first clarify whether they mean a repository automation
+or a local Codex runtime automation.
+
+Prefer local Codex runtime automation when the requested behavior is about this
+agent instance waking up, continuing work, posting to Discord, checking GitHub
+state, or running machine-local maintenance. Do not create GitHub Actions,
+external cron jobs, or cloud scheduler resources unless the user explicitly asks
+for those.
+
+Local Codex automation pattern used here:
+
+- Codex home is `$CODEX_HOME`, usually `/auth/codex` in the container.
+- Main config is `$CODEX_HOME/config.toml`.
+- Runtime scripts live under `$CODEX_HOME/automations/`.
+- Logs should go under `$CODEX_HOME/log/`.
+- PID or runtime state should go under `$CODEX_HOME/tmp/`.
+- Enable hooks with `[features] hooks = true`.
+- Use `[[hooks.SessionStart]]` for Codex session startup/resume hooks.
+- Session-start hooks can run a small Python script that starts, stops, checks,
+  or previews a daemon-like heartbeat process.
+
+Example shape:
+
+```toml
+[features]
+hooks = true
+
+[[hooks.SessionStart]]
+matcher = "startup|resume"
+
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = "python3 /auth/codex/automations/studyos_discord_heartbeat.py start"
+timeout = 10
+statusMessage = "Starting StudyOS Discord heartbeat"
+```
+
+Automation scripts should be idempotent. A `start` command should check an
+existing PID before spawning another process. Useful commands are `start`,
+`stop`, `status`, `preview`, and `post-once`. They should use existing runtime
+credentials such as `DISCORD_TOKEN`, `GH_CONFIG_DIR`, and `CODEX_HOME`, never
+hard-code secrets.
+
+For GitHub monitoring, prefer the authenticated `gh` CLI from inside the
+container and the course workspace mounted at `/workspace`. Comment, refine,
+or create PRs only when the user asked for that behavior and repository policy
+allows it. Never merge PRs.
+"""
+
 DEFAULT_STUDYOS_MEMORY = """# StudyOS Agent Memory
 
 This is the persistent project entry point for Codex runs launched by the
@@ -83,7 +135,7 @@ discussion. Humans always retain final approval and merge authority.
 - Use GitHub links, issue numbers, and PR numbers when available.
 - Keep replies readable in Discord. For long outputs, summarize and point to
   files, issues, or PRs.
-"""
+""" + AUTOMATION_MEMORY_SECTION
 
 
 def get_studyos_memory_path(codex_home: str | None) -> Path:
@@ -96,4 +148,11 @@ def ensure_studyos_memory(codex_home: str | None) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
         path.write_text(DEFAULT_STUDYOS_MEMORY, encoding="utf-8")
+    else:
+        text = path.read_text(encoding="utf-8")
+        if "## Codex Runtime And Automations" not in text:
+            path.write_text(
+                text.rstrip() + "\n\n" + AUTOMATION_MEMORY_SECTION,
+                encoding="utf-8",
+            )
     return path
