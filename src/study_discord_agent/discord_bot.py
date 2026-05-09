@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import discord
 from discord.ext import commands
@@ -7,6 +8,8 @@ from study_discord_agent.agent import AgentGateway
 from study_discord_agent.config import Settings
 from study_discord_agent.github_client import GitHubClient
 from study_discord_agent.github_events import DiscordNotification
+
+logger = logging.getLogger(__name__)
 
 
 class StudyBot(commands.Bot):
@@ -94,6 +97,12 @@ class StudyBot(commands.Bot):
             return
 
         prompt = message.clean_content.replace(f"@{self.user.display_name}", "").strip()
+        logger.info(
+            "discord mention received author=%s channel_id=%s message_id=%s",
+            message.author,
+            message.channel.id,
+            message.id,
+        )
         if not prompt:
             await message.reply("Send a question or task after mentioning me.")
             return
@@ -106,5 +115,7 @@ class StudyBot(commands.Bot):
                     channel_id=message.channel.id,
                 )
                 await message.reply(reply.message[:1900])
+                logger.info("discord mention replied message_id=%s", message.id)
             except RuntimeError as exc:
                 await message.reply(f"Agent failed: {exc}")
+                logger.warning("discord mention failed message_id=%s error=%s", message.id, exc)

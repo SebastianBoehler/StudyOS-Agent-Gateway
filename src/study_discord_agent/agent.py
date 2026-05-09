@@ -1,9 +1,14 @@
 import asyncio
+import json
+import logging
 import shlex
+import time
 from dataclasses import dataclass
 from typing import Any, cast
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -25,11 +30,23 @@ class AgentGateway:
         self._timeout_seconds = timeout_seconds
 
     async def ask(self, prompt: str, user: str, channel_id: int) -> AgentReply:
+        started_at = time.monotonic()
+        logger.info("agent request started source_user=%s channel_id=%s", user, channel_id)
         if self._webhook_url:
-            return await self._ask_webhook(prompt, user, channel_id)
-        if self._command:
-            return await self._ask_command(prompt, user, channel_id)
-        raise RuntimeError("Configure AGENT_WEBHOOK_URL or AGENT_COMMAND")
+            reply = await self._ask_webhook(prompt, user, channel_id)
+        elif self._command:
+            reply = await self._ask_command(prompt, user, channel_id)
+        else:
+            raise RuntimeError("Configure AGENT_WEBHOOK_URL or AGENT_COMMAND")
+
+        elapsed = time.monotonic() - started_at
+        logger.info(
+            "agent request completed source_user=%s channel_id=%s elapsed_seconds=%.2f",
+            user,
+            channel_id,
+            elapsed,
+        )
+        return reply
 
     async def _ask_webhook(self, prompt: str, user: str, channel_id: int) -> AgentReply:
         if not self._webhook_url:
@@ -71,6 +88,7 @@ class AgentGateway:
             stderr=asyncio.subprocess.PIPE,
             cwd=self._workdir,
         )
+        logger.info("agent command spawned pid=%s command=%s", process.pid, self._command)
         try:
             stdout, stderr = await asyncio.wait_for(
                 process.communicate(full_prompt.encode("utf-8")),
@@ -83,9 +101,35 @@ class AgentGateway:
 
         if process.returncode != 0:
             error = stderr.decode("utf-8", errors="replace").strip()
+            logger.warning("agent command failed returncode=%s error=%s", process.returncode, error)
             raise RuntimeError(f"Agent command failed: {error[:1000]}")
 
-        message = stdout.decode("utf-8", errors="replace").strip()
+        output = stdout.decode("utf-8", errors="replace").strip()
+        message = _extract_agent_message(output)
         if not message:
             raise RuntimeError("Agent command produced no output")
         return AgentReply(message=message)
+
+
+def _extract_agent_message(output: str) -> str:
+    """Return the final assistant message from Codex JSONL output, or raw output."""
+    messages: list[str] = []
+    for line in output.splitlines():
+        try:
+            parsed: object = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(parsed, dict):
+            continue
+        event = cast(dict[str, object], parsed)
+        item_obj = event.get("item")
+        if not isinstance(item_obj, dict):
+            continue
+        item = cast(dict[str, object], item_obj)
+        text = item.get("text")
+        if item.get("type") == "agent_message" and isinstance(text, str):
+            messages.append(text)
+
+    if messages:
+        return messages[-1].strip()
+    return output
