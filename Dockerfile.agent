@@ -7,6 +7,7 @@ ARG INSTALL_CODEX=true
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV CODEX_HOME=/auth/codex
+ENV GH_CONFIG_DIR=/auth/gh
 
 WORKDIR /app
 
@@ -14,6 +15,18 @@ COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
 COPY --from=node-runtime /usr/local/bin/npm /usr/local/bin/npm
 COPY --from=node-runtime /usr/local/bin/npx /usr/local/bin/npx
 COPY --from=node-runtime /usr/local/lib/node_modules /usr/local/lib/node_modules
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates curl git openssh-client \
+  && mkdir -p -m 755 /etc/apt/keyrings \
+  && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+  && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+    > /etc/apt/sources.list.d/github-cli.list \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends gh \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN if [ "$INSTALL_CODEX" = "true" ]; then npm install -g @openai/codex; fi
 

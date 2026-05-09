@@ -7,9 +7,15 @@ services:
       - .env
     environment:
       CODEX_HOME: /auth/codex
+      GH_CONFIG_DIR: /auth/gh
     volumes:
-      - ${CODEX_HOME:-$HOME/.codex}:/auth/codex:ro
+      - codex-auth:/auth/codex
+      - gh-auth:/auth/gh
       - ${COURSE_REPO_PATH:-./workspace}:/workspace
     ports:
       - "8080:8080"
     restart: unless-stopped
+
+volumes:
+  codex-auth:
+  gh-auth:

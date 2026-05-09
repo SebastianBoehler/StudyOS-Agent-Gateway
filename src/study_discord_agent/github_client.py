@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -87,8 +88,6 @@ class GitHubClient:
     def _require_write(self) -> None:
         if not self._write_enabled:
             raise GitHubWriteDisabledError("GitHub write actions are disabled")
-        if not self._token:
-            raise GitHubWriteDisabledError("GITHUB_TOKEN is required for write actions")
 
     async def _request_object(
         self,
@@ -125,8 +124,9 @@ class GitHubClient:
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         }
-        if self._token:
-            headers["Authorization"] = f"Bearer {self._token}"
+        token = await self._auth_token()
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
         async with httpx.AsyncClient(base_url="https://api.github.com", timeout=20) as client:
             response = await client.request(
                 method,
@@ -140,3 +140,29 @@ class GitHubClient:
         if not isinstance(data, dict | list):
             raise RuntimeError("GitHub returned a non-object response")
         return cast(dict[str, Any] | list[Any], data)
+
+    async def _auth_token(self) -> str | None:
+        if self._token:
+            return self._token
+        try:
+            process = await asyncio.create_subprocess_exec(
+                "gh",
+                "auth",
+                "token",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        except FileNotFoundError:
+            return None
+
+        try:
+            stdout, _ = await asyncio.wait_for(process.communicate(), timeout=5)
+        except TimeoutError:
+            process.kill()
+            await process.wait()
+            return None
+
+        if process.returncode != 0:
+            return None
+        token = stdout.decode("utf-8", errors="replace").strip()
+        return token or None

@@ -26,7 +26,7 @@ The intended deployment is a small server or container where Codex, Claude Code,
 - Optional automatic PR review summaries on GitHub webhook events.
 - Optional Discord mention listener for natural chat tasks.
 - Periodic GitHub triage loop for open PRs and issues.
-- Docker and Docker Compose setup, including an agent image with Codex CLI installed.
+- Docker and Docker Compose setup, including an agent image with `gh`, `git`, SSH, Node/npm, and Codex CLI installed.
 
 ## Architecture
 
@@ -70,6 +70,13 @@ COURSE_REPO_PATH=/path/to/course-monorepo
 docker compose -f docker-compose.agent.yml up --build
 ```
 
+Authenticate the CLIs once inside the running container:
+
+```bash
+docker compose -f docker-compose.agent.yml exec study-discord-agent gh auth login
+docker compose -f docker-compose.agent.yml exec study-discord-agent codex login
+```
+
 ## Configuration
 
 | Variable | Purpose |
@@ -78,7 +85,7 @@ docker compose -f docker-compose.agent.yml up --build
 | `DISCORD_GUILD_ID` | Optional guild ID for faster slash command sync |
 | `DISCORD_PR_CHANNEL_ID` | Discord channel ID for GitHub notifications |
 | `GITHUB_WEBHOOK_SECRET` | Secret configured on the GitHub webhook |
-| `GITHUB_TOKEN` | Fine-grained token or GitHub App installation token |
+| `GITHUB_TOKEN` | Optional fallback token; `gh auth login` is the preferred agent-server path |
 | `GITHUB_REPOSITORY` | Default repository in `owner/name` form |
 | `GITHUB_WRITE_ENABLED` | Enables PR comments, issue closure, and PR merges |
 | `GITHUB_POLL_ENABLED` | Periodically asks the agent to triage open PRs/issues |
@@ -92,6 +99,8 @@ docker compose -f docker-compose.agent.yml up --build
 | `AGENT_WEBHOOK_URL` | Optional external agent endpoint instead of local CLI |
 
 See [`.env.example`](./.env.example) for all supported options.
+
+For gateway design notes and Codex integration options, see [Gateway Research Notes](./docs/gateway-research.md).
 
 ## GitHub Webhook
 
@@ -110,7 +119,9 @@ Set the webhook content type to `application/json` and use the same secret as `G
 
 ## GitHub Permissions
 
-For a fine-grained token, grant only the repositories you need and the smallest permissions that match enabled commands:
+The preferred deployment path is `gh auth login` inside the agent container or on the host. The Python GitHub client will use `GITHUB_TOKEN` when set, otherwise it will try `gh auth token`.
+
+For a fine-grained token fallback, grant only the repositories you need and the smallest permissions that match enabled commands:
 
 - Pull requests: read/write for merge operations
 - Issues: read/write for comments and issue closure
@@ -130,7 +141,7 @@ AGENT_COMMAND="claude -p --permission-mode acceptEdits"
 AGENT_COMMAND="/opt/picoclaw/bin/picoclaw run --stdin"
 ```
 
-For Codex, authenticate once on the host and mount `CODEX_HOME` read-only into the agent container. For Claude Code, authenticate on the deployment machine or use its supported long-lived token setup. Keep repository writes protected by branch protection and GitHub token scopes.
+For Codex, authenticate once in the agent container or mount an existing `CODEX_HOME`. For GitHub, authenticate with `gh auth login` in the same container. For Claude Code, authenticate on the deployment machine or use its supported long-lived token setup. Keep repository writes protected by branch protection and GitHub token scopes.
 
 ## Scheduled Triage
 
@@ -141,7 +152,7 @@ Set `GITHUB_POLL_ENABLED=true` to make the bot check open PRs and issues every `
 - comment on blocked work
 - start small implementations and create PRs
 
-The image should contain tools, but authentication should be injected at deployment time. Do not bake `GITHUB_TOKEN`, Codex auth, Claude auth, SSH keys, or Discord tokens into the image.
+The image contains tools, not credentials. Do not bake GitHub auth, Codex auth, Claude auth, SSH keys, or Discord tokens into the image.
 
 ## Development
 

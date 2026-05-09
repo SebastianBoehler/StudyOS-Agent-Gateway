@@ -4,14 +4,14 @@ The bot can become powerful once GitHub writes are enabled. Keep the first deplo
 
 ## Defaults
 
-- `GITHUB_WRITE_ENABLED=false` disables PR comments, issue closure, and merges.
+- `GITHUB_WRITE_ENABLED=false` disables direct Python PR comments, issue closure, and merges.
 - GitHub webhook payloads require HMAC verification.
 - Slash command writes can be restricted by Discord role IDs.
 - The bot does not read arbitrary Discord messages.
 
 ## Recommended GitHub Token
 
-Use a fine-grained token or GitHub App installation token scoped to the course monorepo.
+Prefer `gh auth login` in the deployment container for the interactive agent-server setup. Use a fine-grained token or GitHub App installation token only for non-interactive deployments.
 
 Grant only what is needed:
 

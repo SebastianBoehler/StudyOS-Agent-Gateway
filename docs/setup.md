@@ -18,7 +18,7 @@ The bot does not need the privileged message-content intent for slash commands. 
 4. Generate a random secret and put it in both GitHub and `GITHUB_WEBHOOK_SECRET`.
 5. Subscribe to pull request and issue events.
 
-For write commands, prefer a fine-grained token or GitHub App installation token scoped to the course repository.
+For the agent-server flow, prefer `gh auth login` in the deployment container. Keep `GITHUB_TOKEN` only as a non-interactive fallback.
 
 ## Deployment
 
@@ -42,23 +42,25 @@ The recommended course setup is:
 
 1. Provision a small server or VM.
 2. Clone the course monorepo onto that server.
-3. Install and authenticate the agent runtime there, for example Codex or Claude Code.
-4. Deploy this bot with `AGENT_COMMAND` pointing to the authenticated runtime.
-5. Keep GitHub write permissions behind role checks and branch protection.
+3. Deploy the agent image, which includes `gh`, `git`, SSH, Node/npm, and Codex.
+4. Authenticate `gh` and Codex inside the running container.
+5. Deploy this bot with `AGENT_COMMAND` pointing to the authenticated runtime.
+6. Keep GitHub write permissions behind role checks and branch protection.
 
-The image can contain GitHub-aware tooling and CLIs, but authentication belongs in mounted config directories or runtime environment variables. Never build tokens into the image.
+The image contains tooling, but authentication belongs in Docker volumes, mounted config directories, or runtime environment variables. Never build tokens into the image.
 
-For Codex, authenticate once on the host and mount the auth directory into the container:
+For Codex and GitHub CLI auth inside the container:
 
 ```bash
 export COURSE_REPO_PATH=/srv/course-monorepo
-export CODEX_HOME=$HOME/.codex
 AGENT_COMMAND="codex exec --full-auto --cd /workspace -"
 AGENT_WORKDIR=/workspace
 docker compose -f docker-compose.agent.yml up --build -d
+docker compose -f docker-compose.agent.yml exec study-discord-agent gh auth login
+docker compose -f docker-compose.agent.yml exec study-discord-agent codex login
 ```
 
-The provided agent image installs Node from the official Node image and can install `@openai/codex`. If your agent needs compilers, `git`, CUDA tools, or course-specific system packages, extend `Dockerfile.agent` for that course environment.
+The provided agent image installs Node from the official Node image, GitHub CLI from GitHub's apt repository, and `@openai/codex` through npm. If your agent needs compilers, CUDA tools, or course-specific system packages, extend `Dockerfile.agent` for that course environment.
 
 For Claude Code, run it directly on the host or build a sibling image with the Claude CLI installed:
 
@@ -80,6 +82,8 @@ GITHUB_POLL_LIMIT=20
 ```
 
 The bot will periodically list open PRs and issues, build one prompt, and invoke the agent. This is the safest shape for "every 15 or 30 minutes, check comments/issues/PRs and act" because scheduling remains outside Discord message handling and can be disabled independently.
+
+When `GITHUB_TOKEN` is not set, the poller and write helpers use `gh auth token`, so the container's `gh auth login` session is enough.
 
 ## External Agent Runtime
 

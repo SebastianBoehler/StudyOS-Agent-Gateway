@@ -62,6 +62,18 @@ GITHUB_POLL_INTERVAL_SECONDS=1800
 
 Use host cron, systemd timers, GitHub Actions, or a separate scheduler container only for jobs that should run independently from the bot process.
 
+Codex-managed automations are a good fit for detached repository maintenance. In that setup, the bot handles Discord and webhook intake, while a Codex cron job runs every 15 or 30 minutes and prompts Codex to inspect the course monorepo with `gh`:
+
+```text
+Use the authenticated GitHub CLI to inspect open issues, pull requests,
+and recent review comments in owner/repo. Identify duplicates, blocked
+threads, stale PRs, and small implementation tasks. Comment only when
+there is a useful update. Create branches and PRs for clearly scoped
+fixes. Do not merge or close work unless repository policy allows it.
+```
+
+Keep those jobs in the Codex automation layer rather than reimplementing a scheduler in this bot when the work does not need Discord context. The bot-side poller remains useful when the result should immediately post into Discord or reuse the same agent command configured for Discord events.
+
 ## Authentication Model
 
 The deployable image should include the bot and any CLIs you need. It should not include credentials.
@@ -69,7 +81,18 @@ The deployable image should include the bot and any CLIs you need. It should not
 Use runtime injection instead:
 
 - `DISCORD_TOKEN` as an environment variable or secret
-- `GITHUB_TOKEN` as an environment variable or GitHub App token provider
-- `CODEX_HOME` mounted read-only for Codex auth
+- GitHub CLI auth in the `gh-auth` Docker volume, or `GITHUB_TOKEN` as a fallback
+- `CODEX_HOME` in the `codex-auth` Docker volume, or mounted from a host auth directory
 - Claude Code auth mounted or configured according to its deployment mode
 - SSH deploy keys mounted read-only if the agent needs Git over SSH
+
+## Interactive Container Login
+
+The default agent compose file creates persistent `gh-auth` and `codex-auth` volumes. Log in once:
+
+```bash
+docker compose -f docker-compose.agent.yml exec study-discord-agent gh auth login
+docker compose -f docker-compose.agent.yml exec study-discord-agent codex login
+```
+
+After that, Discord mentions, GitHub webhooks, and the GitHub poller can invoke the authenticated tools without embedding tokens in the image.
