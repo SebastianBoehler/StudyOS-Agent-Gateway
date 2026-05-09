@@ -4,49 +4,60 @@ STUDYOS_MEMORY_FILENAME = "studyos-course.md"
 
 AUTOMATION_MEMORY_SECTION = """## Codex Runtime And Automations
 
-This gateway runs inside an authenticated Codex runtime. When students ask to
-set up an automation, first clarify whether they mean a repository automation
-or a local Codex runtime automation.
+This gateway runs inside an authenticated Codex runtime. When students ask for
+an automation, first clarify what kind they mean:
 
-Prefer local Codex runtime automation when the requested behavior is about this
-agent instance waking up, continuing work, posting to Discord, checking GitHub
-state, or running machine-local maintenance. Do not create GitHub Actions,
-external cron jobs, or cloud scheduler resources unless the user explicitly asks
-for those.
+- Codex app automation: a scheduled Codex task managed by the desktop app.
+- Thread automation: heartbeat-style follow-up attached to the current thread.
+- Repository automation: GitHub Actions or CI workflow.
+- Runtime hook: a low-level Codex lifecycle hook in `config.toml`.
 
-Local Codex automation pattern used here:
+For StudyOS, prefer Codex app automations or thread automations. Do not create
+GitHub Actions, external cron jobs, cloud schedulers, or custom daemon scripts
+unless the user explicitly asks for those.
 
-- Codex home is `$CODEX_HOME`, usually `/auth/codex` in the container.
-- Main config is `$CODEX_HOME/config.toml`.
-- Runtime scripts live under `$CODEX_HOME/automations/`.
-- Logs should go under `$CODEX_HOME/log/`.
-- PID or runtime state should go under `$CODEX_HOME/tmp/`.
-- Enable hooks with `[features] hooks = true`.
-- Use `[[hooks.SessionStart]]` for Codex session startup/resume hooks.
-- Session-start hooks can run a small Python script that starts, stops, checks,
-  or previews a daemon-like heartbeat process.
+Codex app automations live under the Codex home directory, typically
+`~/.codex/automations/<automation-id>/automation.toml` on the host desktop app.
+They may have an adjacent `memory.md` containing run notes. In the StudyOS
+container, Codex home is usually `/auth/codex`, but the desktop app's
+automation scheduler normally manages the host-side `~/.codex/automations`
+tree.
 
-Example shape:
+Typical automation TOML fields observed in Codex app automations:
 
-```toml
-[features]
-hooks = true
+- `version = 1`
+- `id`, `kind`, `name`, `prompt`, `status`, `rrule`
+- `model`, `reasoning_effort`
+- `execution_environment = "local"` or `"worktree"` for cron automations
+- `cwds = [...]` for project paths on cron automations
+- `target_thread_id` for heartbeat/thread automations
 
-[[hooks.SessionStart]]
-matcher = "startup|resume"
+Use `kind = "cron"` for standalone scheduled work that starts fresh on each
+run and reports results through the Codex app. Use `kind = "heartbeat"` when
+the scheduled work should continue the same conversation/thread.
 
-[[hooks.SessionStart.hooks]]
-type = "command"
-command = "python3 /auth/codex/automations/studyos_discord_heartbeat.py start"
-timeout = 10
-statusMessage = "Starting StudyOS Discord heartbeat"
-```
+Runtime hooks are different. Codex hooks in `$CODEX_HOME/config.toml` are for
+session lifecycle integration and command guardrails, not for normal recurring
+work. Hooks can execute shell commands, so treat them as advanced integration
+points. Avoid creating helper scripts or daemon processes from Discord unless
+the user explicitly asks for a custom runtime integration.
 
-Automation scripts should be idempotent. A `start` command should check an
-existing PID before spawning another process. Useful commands are `start`,
-`stop`, `status`, `preview`, and `post-once`. They should use existing runtime
-credentials such as `DISCORD_TOKEN`, `GH_CONFIG_DIR`, and `CODEX_HOME`, never
-hard-code secrets.
+If asked to configure a StudyOS automation, prefer a TOML/Markdown-only change
+or ask the human to create/update it through the Codex app automation UI. Keep
+automation prompts self-contained and explicit about human-only merges.
+
+Container/image prefill policy:
+
+- It is fine to ship automation templates with this repository or image.
+- Prefer templates over active, self-starting jobs. A template should be a
+  TOML/Markdown artifact a human can review before enabling.
+- Do not assume that files under `/auth/codex/automations/` are scheduled
+  unless a Codex app/automation runner is actually using that `CODEX_HOME`.
+- Docker images should not bake credentials or mutable runtime state. If
+  defaults are needed, seed them on startup into the persistent Codex volume,
+  preserving existing user edits.
+- Named Docker volumes hide files copied into the image at the same path after
+  the first run, so startup seeding is more reliable than image-only copies.
 
 For GitHub monitoring, prefer the authenticated `gh` CLI from inside the
 container and the course workspace mounted at `/workspace`. Comment, refine,
@@ -150,9 +161,17 @@ def ensure_studyos_memory(codex_home: str | None) -> Path:
         path.write_text(DEFAULT_STUDYOS_MEMORY, encoding="utf-8")
     else:
         text = path.read_text(encoding="utf-8")
-        if "## Codex Runtime And Automations" not in text:
-            path.write_text(
-                text.rstrip() + "\n\n" + AUTOMATION_MEMORY_SECTION,
-                encoding="utf-8",
-            )
+        path.write_text(_upsert_automation_section(text), encoding="utf-8")
     return path
+
+
+def _upsert_automation_section(text: str) -> str:
+    heading = "## Codex Runtime And Automations"
+    if heading not in text:
+        return text.rstrip() + "\n\n" + AUTOMATION_MEMORY_SECTION
+
+    start = text.index(heading)
+    next_heading = text.find("\n## ", start + len(heading))
+    if next_heading == -1:
+        return text[:start].rstrip() + "\n\n" + AUTOMATION_MEMORY_SECTION
+    return text[:start].rstrip() + "\n\n" + AUTOMATION_MEMORY_SECTION + text[next_heading:]

@@ -12,6 +12,8 @@ def test_ensure_studyos_memory_creates_default_entrypoint(tmp_path: Path) -> Non
     assert "Build your own StudyOS" in text
     assert "Modern Agentic" in text
     assert "Codex Runtime And Automations" in text
+    assert "Python heartbeat" not in text
+    assert "automation templates" in text
 
 
 def test_build_agent_prompt_points_to_memory(tmp_path: Path) -> None:
@@ -33,3 +35,4 @@ def test_ensure_studyos_memory_appends_missing_sections(tmp_path: Path) -> None:
     assert ensured_path == path
     assert "Local notes stay here." in text
     assert "Codex Runtime And Automations" in text
+    assert "Python heartbeat" not in text
