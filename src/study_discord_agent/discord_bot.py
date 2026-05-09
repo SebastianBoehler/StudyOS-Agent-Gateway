@@ -137,7 +137,7 @@ def study_group(bot: StudyBot) -> app_commands.Group:
         result = await bot.github.merge_pull_request(target, number)
         await interaction.response.send_message(f"PR merged: {result}", ephemeral=True)
 
-    @group.command(name="agent", description="Ask the configured course agent")
+    @group.command(name="agent", description="Ask the configured StudyOS agent")
     @app_commands.describe(prompt="Question or task for the agent")
     async def ask_agent(  # pyright: ignore[reportUnusedFunction]
         interaction: discord.Interaction,

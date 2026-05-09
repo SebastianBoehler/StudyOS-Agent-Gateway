@@ -56,7 +56,7 @@ class AgentGateway:
             raise RuntimeError("AGENT_COMMAND is not configured")
 
         full_prompt = (
-            "You are running from a Discord/GitHub course collaboration bot.\n"
+            "You are running from the StudyOS Discord/GitHub collaboration gateway.\n"
             f"Discord user: {user}\n"
             f"Discord channel id: {channel_id}\n\n"
             f"{prompt}\n"

@@ -1,10 +1,10 @@
 # Gateway Research Notes
 
-This project follows the same broad shape as OpenClaw: one gateway process receives messages from external surfaces, resolves routing and permissions, then forwards work to an agent runtime.
+StudyOS Discord Agent follows the same broad shape as OpenClaw: one gateway process receives messages from external surfaces, resolves routing and permissions, then forwards work to an agent runtime.
 
 ## OpenClaw Patterns Worth Reusing
 
-OpenClaw's gateway model is useful for a course Discord/GitHub agent because it separates channel plumbing from agent execution.
+OpenClaw's gateway model is useful for StudyOS because it separates channel plumbing from agent execution.
 
 Useful patterns:
 
@@ -62,7 +62,7 @@ Codex hooks are useful for guardrails and status, not for receiving Discord mess
 
 Useful hook events:
 
-- `SessionStart`: inject course/repo context.
+- `SessionStart`: inject StudyOS course/repo context.
 - `UserPromptSubmit`: record or normalize incoming prompts.
 - `PreToolUse`: block unsafe shell commands or edits.
 - `PermissionRequest`: decide approval requests from policy.

@@ -1,5 +1,5 @@
 services:
-  study-discord-agent:
+  studyos-discord-agent:
     build:
       context: .
       dockerfile: Dockerfile.agent

@@ -13,7 +13,7 @@ def build_triage_prompt(
     issues: list[dict[str, Any]],
 ) -> str:
     lines = [
-        f"You are the course GitHub triage agent for {repository}.",
+        f"You are the StudyOS GitHub triage agent for {repository}.",
         "Inspect the current open PRs and issues below.",
         "Unify duplicate work, identify stale or blocked items, and propose concrete next actions.",
         "If the configured runtime has repository write access, you may implement small issues,",

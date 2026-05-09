@@ -1,18 +1,21 @@
 <div align="center">
 
-# study-discord-agent
+# StudyOS Discord Agent
 
-Discord bot and GitHub bridge for student project collaboration.
+Shared Discord and GitHub gateway for the StudyOS course.
 
 ![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)
 ![Discord](https://img.shields.io/badge/discord.py-2.x-5865F2?logo=discord&logoColor=white)
+![StudyOS](https://img.shields.io/badge/StudyOS-course_gateway-111827)
 ![License](https://img.shields.io/badge/license-MIT-D22128.svg)
 
 </div>
 
-`study-discord-agent` connects a course Discord server with GitHub pull requests, issues, and agent workflows. It is designed for a shared monorepo where students collaborate through PRs and use one Discord channel for review visibility.
+`StudyOS Discord Agent` connects the StudyOS Discord server with GitHub pull requests, issues, and agent workflows. It is designed for the StudyOS course monorepo, where course participants collaborate through GitHub while coordinating in Discord.
 
-The intended deployment is a small server or container where Codex, Claude Code, PicoClaw, OpenClaw, or a custom course agent is already authenticated. The Python bot is the Discord/GitHub gateway: it receives messages and GitHub webhooks, invokes the configured agent command, and gates GitHub write actions.
+The goal is to give the whole StudyOS cohort one shared interface to a few deployed coding-agent instances. Not every participant needs their own Codex or Claude subscription. A small number of authenticated agent servers can listen to Discord messages, GitHub webhooks, and scheduled triage jobs, then help with issues, reviews, pull requests, and repository maintenance through the same GitHub and Discord surfaces everyone already uses.
+
+The Python service is the StudyOS gateway. It receives Discord messages and GitHub webhooks, invokes the configured agent command, and gates GitHub write actions.
 
 ## Features
 
@@ -27,6 +30,7 @@ The intended deployment is a small server or container where Codex, Claude Code,
 - Optional Discord mention listener for natural chat tasks.
 - Periodic GitHub triage loop for open PRs and issues.
 - Docker and Docker Compose setup, including an agent image with `gh`, `git`, SSH, Node/npm, and Codex CLI installed.
+- Shared-agent deployment model for StudyOS course participants.
 
 ## Architecture
 
@@ -39,7 +43,7 @@ flowchart LR
     Bot --> Poller["GitHub poller"]
     Poller --> Agent
     Bot --> GitHubAPI["GitHub REST API"]
-    Bot --> Agent["Codex / Claude / PicoClaw / OpenClaw"]
+    Bot --> Agent["Shared StudyOS agent instances"]
 ```
 
 ## Quick Start
@@ -51,7 +55,7 @@ cp .env.example .env
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
-study-discord-agent
+studyos-discord-agent
 ```
 
 For Docker:
@@ -66,15 +70,15 @@ For an agent-enabled Codex container:
 ```bash
 AGENT_COMMAND="codex exec --full-auto --cd /workspace -"
 AGENT_WORKDIR=/workspace
-COURSE_REPO_PATH=/path/to/course-monorepo
+COURSE_REPO_PATH=/path/to/studyos-monorepo
 docker compose -f docker-compose.agent.yml up --build
 ```
 
 Authenticate the CLIs once inside the running container:
 
 ```bash
-docker compose -f docker-compose.agent.yml exec study-discord-agent gh auth login
-docker compose -f docker-compose.agent.yml exec study-discord-agent codex login
+docker compose -f docker-compose.agent.yml exec studyos-discord-agent gh auth login
+docker compose -f docker-compose.agent.yml exec studyos-discord-agent codex login
 ```
 
 ## Configuration
@@ -141,7 +145,7 @@ AGENT_COMMAND="claude -p --permission-mode acceptEdits"
 AGENT_COMMAND="/opt/picoclaw/bin/picoclaw run --stdin"
 ```
 
-For Codex, authenticate once in the agent container or mount an existing `CODEX_HOME`. For GitHub, authenticate with `gh auth login` in the same container. For Claude Code, authenticate on the deployment machine or use its supported long-lived token setup. Keep repository writes protected by branch protection and GitHub token scopes.
+For Codex, authenticate once in the agent container or mount an existing `CODEX_HOME`. For GitHub, authenticate with `gh auth login` in the same container. For Claude Code, authenticate on the deployment machine or use its supported long-lived token setup. The point is to run a few trusted StudyOS agent instances for the cohort, while keeping repository writes protected by branch protection, role checks, and GitHub token scopes.
 
 ## Scheduled Triage
 

@@ -25,7 +25,7 @@ For the agent-server flow, prefer `gh auth login` in the deployment container. K
 Run locally:
 
 ```bash
-study-discord-agent
+studyos-discord-agent
 ```
 
 Run with Docker Compose:
@@ -38,26 +38,28 @@ Expose port `8080` through a reverse proxy or tunnel for GitHub webhooks.
 
 ## Agent Runtime On The Server
 
-The recommended course setup is:
+The recommended StudyOS setup is:
 
 1. Provision a small server or VM.
-2. Clone the course monorepo onto that server.
+2. Clone the StudyOS course monorepo onto that server.
 3. Deploy the agent image, which includes `gh`, `git`, SSH, Node/npm, and Codex.
 4. Authenticate `gh` and Codex inside the running container.
 5. Deploy this bot with `AGENT_COMMAND` pointing to the authenticated runtime.
 6. Keep GitHub write permissions behind role checks and branch protection.
+
+This lets the course share a few authenticated coding-agent instances instead of requiring every participant to own and configure one. Discord and GitHub become the common StudyOS interface.
 
 The image contains tooling, but authentication belongs in Docker volumes, mounted config directories, or runtime environment variables. Never build tokens into the image.
 
 For Codex and GitHub CLI auth inside the container:
 
 ```bash
-export COURSE_REPO_PATH=/srv/course-monorepo
+export COURSE_REPO_PATH=/srv/studyos-monorepo
 AGENT_COMMAND="codex exec --full-auto --cd /workspace -"
 AGENT_WORKDIR=/workspace
 docker compose -f docker-compose.agent.yml up --build -d
-docker compose -f docker-compose.agent.yml exec study-discord-agent gh auth login
-docker compose -f docker-compose.agent.yml exec study-discord-agent codex login
+docker compose -f docker-compose.agent.yml exec studyos-discord-agent gh auth login
+docker compose -f docker-compose.agent.yml exec studyos-discord-agent codex login
 ```
 
 The provided agent image installs Node from the official Node image, GitHub CLI from GitHub's apt repository, and `@openai/codex` through npm. If your agent needs compilers, CUDA tools, or course-specific system packages, extend `Dockerfile.agent` for that course environment.
@@ -66,7 +68,7 @@ For Claude Code, run it directly on the host or build a sibling image with the C
 
 ```bash
 AGENT_COMMAND="claude -p --permission-mode acceptEdits"
-AGENT_WORKDIR=/srv/course-monorepo
+AGENT_WORKDIR=/srv/studyos-monorepo
 ```
 
 Use `AGENT_AUTO_REVIEW_ENABLED=true` only after slash-command agent usage works reliably.

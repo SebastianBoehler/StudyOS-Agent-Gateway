@@ -62,7 +62,7 @@ GITHUB_POLL_INTERVAL_SECONDS=1800
 
 Use host cron, systemd timers, GitHub Actions, or a separate scheduler container only for jobs that should run independently from the bot process.
 
-Codex-managed automations are a good fit for detached repository maintenance. In that setup, the bot handles Discord and webhook intake, while a Codex cron job runs every 15 or 30 minutes and prompts Codex to inspect the course monorepo with `gh`:
+Codex-managed automations are a good fit for detached StudyOS repository maintenance. In that setup, the bot handles Discord and webhook intake, while a Codex cron job runs every 15 or 30 minutes and prompts Codex to inspect the StudyOS course monorepo with `gh`:
 
 ```text
 Use the authenticated GitHub CLI to inspect open issues, pull requests,
@@ -91,8 +91,8 @@ Use runtime injection instead:
 The default agent compose file creates persistent `gh-auth` and `codex-auth` volumes. Log in once:
 
 ```bash
-docker compose -f docker-compose.agent.yml exec study-discord-agent gh auth login
-docker compose -f docker-compose.agent.yml exec study-discord-agent codex login
+docker compose -f docker-compose.agent.yml exec studyos-discord-agent gh auth login
+docker compose -f docker-compose.agent.yml exec studyos-discord-agent codex login
 ```
 
 After that, Discord mentions, GitHub webhooks, and the GitHub poller can invoke the authenticated tools without embedding tokens in the image.
