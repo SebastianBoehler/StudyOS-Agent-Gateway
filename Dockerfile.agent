@@ -11,10 +11,7 @@ ENV GH_CONFIG_DIR=/auth/gh
 
 WORKDIR /app
 
-COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
-COPY --from=node-runtime /usr/local/bin/npm /usr/local/bin/npm
-COPY --from=node-runtime /usr/local/bin/npx /usr/local/bin/npx
-COPY --from=node-runtime /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node-runtime /usr/local/ /usr/local/
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl git openssh-client \
