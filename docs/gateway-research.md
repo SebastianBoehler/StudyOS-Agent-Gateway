@@ -80,11 +80,11 @@ Use this for detached jobs:
 - inspect open issues and PRs every 15 or 30 minutes
 - unify duplicate issue threads
 - summarize stale or blocked PRs
-- start small implementation branches
-- create PRs for bounded fixes
+- identify small implementation candidates
+- propose PR plans for bounded fixes
 - comment on PRs when there is a concrete review or status update
 
-The bot-side poller is still useful when the output needs to be posted to Discord, but Codex automations are a cleaner fit for repository maintenance that can run without a Discord event.
+The bot-side poller is still useful when the output needs to be posted to Discord, but Codex automations are a cleaner fit for repository maintenance that can run without a Discord event. For StudyOS, implementation should remain human-gated: automations can identify ready issues, but a student should explicitly ask the agent to implement before it creates a branch or PR.
 
 ### App Server
 

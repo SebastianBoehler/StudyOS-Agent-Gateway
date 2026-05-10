@@ -48,7 +48,7 @@ The recommended StudyOS setup is:
 3. Deploy the agent image, which includes `gh`, `git`, SSH, Node/npm, and Codex.
 4. Authenticate `gh` and Codex inside the running container.
 5. Deploy this bot with `AGENT_COMMAND` pointing to the authenticated runtime.
-6. Keep GitHub writes behind branch protection and human PR merges.
+6. Keep implementation starts, approvals, and merges behind human review.
 
 This lets the course share a few authenticated coding-agent instances instead of requiring every participant to own and configure one. Discord and GitHub become the common StudyOS interface.
 
@@ -86,9 +86,11 @@ GITHUB_POLL_INTERVAL_SECONDS=1800
 GITHUB_POLL_LIMIT=20
 ```
 
-The bot will periodically list open PRs and issues, build one prompt, and invoke the agent. This is the safest shape for "every 15 or 30 minutes, check comments/issues/PRs and act" because scheduling remains outside Discord message handling and can be disabled independently.
+The bot will periodically list open PRs and issues, build one prompt, and invoke the agent. This is the safest shape for "every 15 or 30 minutes, check comments/issues/PRs and summarize" because scheduling remains outside Discord message handling and can be disabled independently.
 
 When `GITHUB_TOKEN` is not set, the poller uses `gh auth token`, so the container's `gh auth login` session is enough. For more advanced scheduled work, Codex automations can skip the bot poller entirely and directly prompt Codex to inspect the repository with `gh`.
+
+Unattended triage should refine issues, surface duplicates, summarize stale PRs, and invite review attention. It should not start implementation by itself. A student should explicitly ask the bot to implement a specific issue in Discord or GitHub before it creates a branch or PR.
 
 ## External Agent Runtime
 

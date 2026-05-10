@@ -22,7 +22,7 @@ model_reasoning_effort = "high"
 
 The gateway also seeds `$CODEX_HOME/memories/studyos-course.md` on startup if the file does not already exist. Discord requests point Codex at this memory entry point instead of injecting the full course/project context into every prompt.
 
-The gateway seeds a paused StudyOS GitHub triage automation template under `$CODEX_HOME/automation-templates/studyos-github-triage/`. This mirrors Codex app automation TOML shape while avoiding accidental unattended runs in plain CLI-only containers. If the deployment uses a Codex app automation runner against the same `CODEX_HOME`, set `STUDYOS_SEED_ACTIVE_AUTOMATIONS=true` to copy the template into `$CODEX_HOME/automations` without overwriting existing edits.
+The gateway seeds paused StudyOS automation templates under `$CODEX_HOME/automation-templates/`. This mirrors Codex app automation TOML shape while avoiding accidental unattended runs in plain CLI-only containers. If the deployment uses a Codex app automation runner against the same `CODEX_HOME`, set `STUDYOS_SEED_ACTIVE_AUTOMATIONS=true` to copy the templates into `$CODEX_HOME/automations` without overwriting existing edits.
 
 Other examples:
 
@@ -61,6 +61,8 @@ The generated prompts ask for PR review summaries, issue refinement questions, d
 - branch protection
 - human-only merge policy
 
+Implementation is human-gated. The gateway can help refine an issue until it is ready, but branch or PR creation should start only after a student explicitly asks the agent to implement a specific issue in Discord or in a GitHub issue comment.
+
 ## Cron And Scheduled Work
 
 For this repo, prefer the built-in GitHub poller first:
@@ -77,9 +79,10 @@ Codex-managed automations are a good fit for detached StudyOS repository mainten
 ```text
 Use the authenticated GitHub CLI to inspect open issues, pull requests,
 and recent review comments in owner/repo. Identify duplicates, blocked
-threads, stale PRs, and small implementation tasks. Comment only when
-there is a useful update. Create branches and PRs for clearly scoped
-fixes. Do not merge or close work unless repository policy allows it.
+threads, stale PRs, and implementation candidates. Comment only when
+there is a useful update. Do not create branches or PRs from unattended
+automation; wait until a human explicitly asks the agent to implement a
+specific issue. Never merge pull requests.
 ```
 
 For StudyOS, prefer this simpler Codex automation when it is enough. Webhooks are only needed for low-latency updates into Discord or immediate issue-refinement prompts. The bot-side poller remains useful when the result should post into Discord or reuse the same agent command configured for Discord mentions.
