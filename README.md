@@ -81,6 +81,8 @@ model_reasoning_effort = "high"
 
 On startup the gateway seeds `$CODEX_HOME/memories/studyos-course.md` if it does not exist. Each Discord-triggered Codex run is pointed at that file as the project memory entry point for course context, product direction, collaboration policy, and tone.
 
+It also seeds a paused Codex app automation template at `$CODEX_HOME/automation-templates/studyos-github-triage/automation.toml`. Set `STUDYOS_SEED_ACTIVE_AUTOMATIONS=true` only when the target `CODEX_HOME` is managed by a Codex app automation runner and you want the template copied into `$CODEX_HOME/automations`.
+
 Authenticate the CLIs once inside the running container:
 
 ```bash

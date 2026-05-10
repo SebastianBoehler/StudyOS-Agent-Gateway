@@ -58,6 +58,10 @@ Container/image prefill policy:
   preserving existing user edits.
 - Named Docker volumes hide files copied into the image at the same path after
   the first run, so startup seeding is more reliable than image-only copies.
+- This gateway ships a paused StudyOS GitHub triage automation template under
+  `$CODEX_HOME/automation-templates/studyos-github-triage/`. It may be copied
+  into `$CODEX_HOME/automations/` only when an actual Codex app automation
+  runner is using that Codex home.
 
 For GitHub monitoring, prefer the authenticated `gh` CLI from inside the
 container and the course workspace mounted at `/workspace`. Comment, refine,

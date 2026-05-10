@@ -4,6 +4,7 @@ import logging
 import uvicorn
 
 from study_discord_agent.agent import AgentGateway
+from study_discord_agent.automation_templates import seed_automation_templates
 from study_discord_agent.config import load_settings
 from study_discord_agent.discord_bot import StudyBot
 from study_discord_agent.github_client import GitHubClient
@@ -17,6 +18,7 @@ async def run() -> None:
     settings = load_settings()
     logging.basicConfig(level=settings.log_level.upper())
     ensure_studyos_memory(settings.codex_home)
+    seed_automation_templates(settings.codex_home, settings.studyos_seed_active_automations)
 
     queue: asyncio.Queue[DiscordNotification] = asyncio.Queue()
     github = GitHubClient(settings.github_token_value)

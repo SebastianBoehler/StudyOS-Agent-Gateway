@@ -22,6 +22,8 @@ model_reasoning_effort = "high"
 
 The gateway also seeds `$CODEX_HOME/memories/studyos-course.md` on startup if the file does not already exist. Discord requests point Codex at this memory entry point instead of injecting the full course/project context into every prompt.
 
+The gateway seeds a paused StudyOS GitHub triage automation template under `$CODEX_HOME/automation-templates/studyos-github-triage/`. This mirrors Codex app automation TOML shape while avoiding accidental unattended runs in plain CLI-only containers. If the deployment uses a Codex app automation runner against the same `CODEX_HOME`, set `STUDYOS_SEED_ACTIVE_AUTOMATIONS=true` to copy the template into `$CODEX_HOME/automations` without overwriting existing edits.
+
 Other examples:
 
 ```bash
