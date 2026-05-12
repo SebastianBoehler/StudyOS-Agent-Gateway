@@ -1,7 +1,13 @@
 from study_discord_agent.memory import get_studyos_memory_path
 
 
-def build_agent_prompt(prompt: str, user: str, channel_id: int, codex_home: str | None) -> str:
+def build_agent_prompt(
+    prompt: str,
+    user: str,
+    channel_id: int,
+    codex_home: str | None,
+    source_message_id: int | None = None,
+) -> str:
     memory_path = get_studyos_memory_path(codex_home)
     return (
         "You are running from the StudyOS Discord/GitHub collaboration gateway.\n"
@@ -11,7 +17,15 @@ def build_agent_prompt(prompt: str, user: str, channel_id: int, codex_home: str 
         "context only when it affects the answer.\n"
         "Never merge pull requests; humans approve and merge.\n"
         f"Discord user: {user}\n"
-        f"Discord channel id: {channel_id}\n\n"
+        f"Discord channel id: {channel_id}\n"
+        f"Discord source message id: {source_message_id or 'unknown'}\n"
+        "Discord context tool: if the request depends on earlier Discord discussion, "
+        "or wording like 'this', 'that', 'the repo', or 'what did we discuss' makes the "
+        "request ambiguous, fetch channel context before answering. Run "
+        "`studyos-discord-context --channel-id <channel_id> --around-message-id "
+        "<source_message_id> --limit 20` when a source message id is available, or omit "
+        "the message id to fetch the latest channel messages. If the tool is unavailable "
+        "or lacks permission, say that explicitly.\n\n"
         "User request:\n"
         f"{prompt}\n"
     )

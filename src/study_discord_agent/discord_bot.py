@@ -113,6 +113,7 @@ class StudyBot(commands.Bot):
                     prompt=prompt,
                     user=str(message.author),
                     channel_id=message.channel.id,
+                    source_message_id=message.id,
                 )
                 await message.reply(reply.message[:1900])
                 logger.info("discord mention replied message_id=%s", message.id)

@@ -17,9 +17,11 @@ def test_ensure_studyos_memory_creates_default_entrypoint(tmp_path: Path) -> Non
 
 
 def test_build_agent_prompt_points_to_memory(tmp_path: Path) -> None:
-    prompt = build_agent_prompt("list tickets", "student", 123, str(tmp_path))
+    prompt = build_agent_prompt("list tickets", "student", 123, str(tmp_path), 456)
 
     assert str(tmp_path / "memories" / "studyos-course.md") in prompt
+    assert "Discord source message id: 456" in prompt
+    assert "studyos-discord-context --channel-id <channel_id>" in prompt
     assert "User request:\nlist tickets" in prompt
 
 

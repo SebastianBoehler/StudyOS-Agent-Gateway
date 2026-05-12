@@ -32,13 +32,19 @@ class AgentGateway:
         self._workdir = workdir
         self._timeout_seconds = timeout_seconds
 
-    async def ask(self, prompt: str, user: str, channel_id: int) -> AgentReply:
+    async def ask(
+        self,
+        prompt: str,
+        user: str,
+        channel_id: int,
+        source_message_id: int | None = None,
+    ) -> AgentReply:
         started_at = time.monotonic()
         logger.info("agent request started source_user=%s channel_id=%s", user, channel_id)
         if self._webhook_url:
-            reply = await self._ask_webhook(prompt, user, channel_id)
+            reply = await self._ask_webhook(prompt, user, channel_id, source_message_id)
         elif self._command:
-            reply = await self._ask_command(prompt, user, channel_id)
+            reply = await self._ask_command(prompt, user, channel_id, source_message_id)
         else:
             raise RuntimeError("Configure AGENT_WEBHOOK_URL or AGENT_COMMAND")
 
@@ -51,7 +57,13 @@ class AgentGateway:
         )
         return reply
 
-    async def _ask_webhook(self, prompt: str, user: str, channel_id: int) -> AgentReply:
+    async def _ask_webhook(
+        self,
+        prompt: str,
+        user: str,
+        channel_id: int,
+        source_message_id: int | None,
+    ) -> AgentReply:
         if not self._webhook_url:
             raise RuntimeError("AGENT_WEBHOOK_URL is not configured")
 
@@ -60,6 +72,7 @@ class AgentGateway:
             "source": "discord",
             "user": user,
             "channel_id": channel_id,
+            "source_message_id": source_message_id,
         }
         async with httpx.AsyncClient(timeout=60) as client:
             response = await client.post(self._webhook_url, json=payload)
@@ -71,11 +84,23 @@ class AgentGateway:
             raise RuntimeError("Agent response must contain a non-empty message")
         return AgentReply(message=message)
 
-    async def _ask_command(self, prompt: str, user: str, channel_id: int) -> AgentReply:
+    async def _ask_command(
+        self,
+        prompt: str,
+        user: str,
+        channel_id: int,
+        source_message_id: int | None,
+    ) -> AgentReply:
         if not self._command:
             raise RuntimeError("AGENT_COMMAND is not configured")
 
-        full_prompt = build_agent_prompt(prompt, user, channel_id, os.environ.get("CODEX_HOME"))
+        full_prompt = build_agent_prompt(
+            prompt,
+            user,
+            channel_id,
+            os.environ.get("CODEX_HOME"),
+            source_message_id,
+        )
         process = await asyncio.create_subprocess_exec(
             *shlex.split(self._command),
             stdin=asyncio.subprocess.PIPE,

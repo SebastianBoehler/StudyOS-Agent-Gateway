@@ -25,6 +25,7 @@ The Python service receives Discord mentions and optional GitHub webhooks, then 
 - Configurable Discord channel for PR and issue notifications.
 - Read-only GitHub REST client for polling open PRs and issues.
 - Agent runner through `AGENT_COMMAND`, or external bridge through `AGENT_WEBHOOK_URL`.
+- Local `studyos-discord-context` tool so agents can fetch recent channel context on demand.
 - Optional PR review summaries and issue refinement prompts on GitHub webhook events.
 - Periodic GitHub triage loop for open PRs and issues.
 - Seeded Codex app automation templates for triage, review nudges, issue refinement, implementation candidate discovery, a coordinator heartbeat, and a weekly digest.
@@ -88,6 +89,12 @@ model_reasoning_effort = "high"
 ```
 
 On startup the gateway seeds `$CODEX_HOME/memories/studyos-course.md` if it does not exist. Each Discord-triggered Codex run is pointed at that file as the project memory entry point for course context, product direction, collaboration policy, and tone.
+
+Discord prompts also include the source channel and message id. When a request depends on previous Discord discussion, the agent is instructed to run the local context tool instead of guessing:
+
+```bash
+studyos-discord-context --channel-id 123 --around-message-id 456 --limit 20
+```
 
 It also seeds paused Codex app automation templates at `$CODEX_HOME/automation-templates/`. Set `STUDYOS_SEED_ACTIVE_AUTOMATIONS=true` only when the target `CODEX_HOME` is managed by a Codex app automation runner and you want the templates copied into `$CODEX_HOME/automations`.
 

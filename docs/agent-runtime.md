@@ -22,6 +22,19 @@ model_reasoning_effort = "high"
 
 The gateway also seeds `$CODEX_HOME/memories/studyos-course.md` on startup if the file does not already exist. Discord requests point Codex at this memory entry point instead of injecting the full course/project context into every prompt.
 
+Discord requests include the source channel id and message id. The gateway does
+not inject channel history into every prompt. Instead, the installed
+`studyos-discord-context` helper is available to the local agent runtime:
+
+```bash
+studyos-discord-context --channel-id 123 --around-message-id 456 --limit 20
+```
+
+The prompt tells the agent to use that tool when a Discord mention refers to
+earlier discussion or otherwise lacks enough context. The helper reads the bot
+token from `DISCORD_TOKEN` and uses the Discord REST API, so it needs the bot to
+have normal read-message permissions in the target channel.
+
 The gateway seeds paused StudyOS automation templates under `$CODEX_HOME/automation-templates/`. This mirrors Codex app automation TOML shape while avoiding accidental unattended runs in plain CLI-only containers. If the deployment uses a Codex app automation runner against the same `CODEX_HOME`, set `STUDYOS_SEED_ACTIVE_AUTOMATIONS=true` to copy the templates into `$CODEX_HOME/automations` without overwriting existing edits.
 
 Other examples:
