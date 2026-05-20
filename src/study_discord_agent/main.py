@@ -9,7 +9,7 @@ from study_discord_agent.config import load_settings
 from study_discord_agent.discord_bot import StudyBot
 from study_discord_agent.github_client import GitHubClient
 from study_discord_agent.github_events import DiscordNotification
-from study_discord_agent.memory import ensure_studyos_memory
+from study_discord_agent.memory import ensure_global_agents, ensure_studyos_memory
 from study_discord_agent.triage import run_github_triage_loop
 from study_discord_agent.web import create_app
 
@@ -17,6 +17,7 @@ from study_discord_agent.web import create_app
 async def run() -> None:
     settings = load_settings()
     logging.basicConfig(level=settings.log_level.upper())
+    ensure_global_agents(settings.codex_home)
     ensure_studyos_memory(settings.codex_home)
     seed_automation_templates(settings.codex_home, settings.studyos_seed_active_automations)
 
@@ -27,6 +28,9 @@ async def run() -> None:
         settings.agent_command,
         settings.agent_workdir,
         settings.agent_timeout_seconds,
+        settings.agent_channel_sessions_enabled,
+        settings.agent_session_store_path,
+        settings.codex_home,
     )
     bot = StudyBot(settings, github, agent, queue)
     app = create_app(settings, queue)

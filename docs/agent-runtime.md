@@ -20,7 +20,11 @@ model = "gpt-5.5"
 model_reasoning_effort = "high"
 ```
 
-The gateway also seeds `$CODEX_HOME/memories/studyos-course.md` on startup if the file does not already exist. Discord requests point Codex at this memory entry point instead of injecting the full course/project context into every prompt.
+The gateway also seeds `$CODEX_HOME/AGENTS.md` and
+`$CODEX_HOME/memories/studyos-course.md` on startup if they do not already
+exist. The global `AGENTS.md` carries reusable working agreements into the
+Docker Codex runtime. Discord requests point Codex at the StudyOS memory entry
+point instead of injecting the full course/project context into every prompt.
 
 Discord requests include the source channel id and message id. The gateway does
 not inject channel history into every prompt. Instead, the installed
@@ -34,6 +38,44 @@ The prompt tells the agent to use that tool when a Discord mention refers to
 earlier discussion or otherwise lacks enough context. The helper reads the bot
 token from `DISCORD_TOKEN` and uses the Discord REST API, so it needs the bot to
 have normal read-message permissions in the target channel.
+
+The same prompt allows the local agent to write short temporary scripts using
+`discord.py` or Discord REST when a user explicitly asks it to interact with
+Discord. This is useful for sending generated files or images back to a channel.
+The token is inherited from the gateway environment; agents must not print or
+commit it, and should not send/edit/delete Discord content without a direct
+human request.
+
+## Channel Sessions
+
+When `AGENT_CHANNEL_SESSIONS_ENABLED=true` and `AGENT_COMMAND` is a Codex
+`exec` command, the gateway keeps one persisted Codex session per Discord
+channel. The first mention runs the configured command. The gateway extracts the
+Codex `session_meta.payload.id` from JSONL output and stores it in:
+
+```text
+$CODEX_HOME/gateway/discord-channel-sessions.json
+```
+
+Later mentions in the same Discord channel run:
+
+```bash
+codex exec resume --json <session-id> -
+```
+
+The gateway keeps a per-channel async lock, so two users in the same channel do
+not resume the same Codex session at the same time. Different channels can run
+in parallel. GitHub poller and webhook-triggered runs do not use Discord channel
+sessions.
+
+Channel sessions still share the configured `AGENT_WORKDIR` by default. For
+implementation tasks that should run in parallel across groups or subtasks,
+Codex is prompted to create or use isolated git worktrees before editing files.
+Prefer task- or channel-specific branch names, verify project-local worktree
+directories are ignored, and keep commits grouped logically. If the active Codex
+runtime exposes subagents or delegation tools, the prompt tells Codex to use
+them for independent subtasks and review; otherwise it should continue in the
+current session and state that subagents are unavailable.
 
 The gateway seeds paused StudyOS automation templates under `$CODEX_HOME/automation-templates/`. This mirrors Codex app automation TOML shape while avoiding accidental unattended runs in plain CLI-only containers. If the deployment uses a Codex app automation runner against the same `CODEX_HOME`, set `STUDYOS_SEED_ACTIVE_AUTOMATIONS=true` to copy the templates into `$CODEX_HOME/automations` without overwriting existing edits.
 

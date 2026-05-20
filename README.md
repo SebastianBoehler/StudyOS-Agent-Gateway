@@ -26,6 +26,7 @@ The Python service receives Discord mentions and optional GitHub webhooks, then 
 - Read-only GitHub REST client for polling open PRs and issues.
 - Agent runner through `AGENT_COMMAND`, or external bridge through `AGENT_WEBHOOK_URL`.
 - Local `studyos-discord-context` tool so agents can fetch recent channel context on demand.
+- Codex channel sessions: Discord channels can resume their own persisted Codex CLI session.
 - Optional PR review summaries and issue refinement prompts on GitHub webhook events.
 - Periodic GitHub triage loop for open PRs and issues.
 - Seeded Codex app automation templates for triage, review nudges, issue refinement, implementation candidate discovery, a coordinator heartbeat, and a weekly digest.
@@ -88,13 +89,30 @@ model = "gpt-5.5"
 model_reasoning_effort = "high"
 ```
 
-On startup the gateway seeds `$CODEX_HOME/memories/studyos-course.md` if it does not exist. Each Discord-triggered Codex run is pointed at that file as the project memory entry point for course context, product direction, collaboration policy, and tone.
+On startup the gateway seeds `$CODEX_HOME/AGENTS.md` and
+`$CODEX_HOME/memories/studyos-course.md` if they do not exist. Global
+`AGENTS.md` makes Codex inherit reusable working agreements in the Docker
+runtime, while the memory file is the StudyOS project entry point for course
+context, product direction, collaboration policy, and tone.
 
 Discord prompts also include the source channel and message id. When a request depends on previous Discord discussion, the agent is instructed to run the local context tool instead of guessing:
 
 ```bash
 studyos-discord-context --channel-id 123 --around-message-id 456 --limit 20
 ```
+
+When `AGENT_CHANNEL_SESSIONS_ENABLED=true`, Discord mentions handled by a Codex
+`AGENT_COMMAND` store a mapping from Discord channel ID to Codex session ID under
+`$CODEX_HOME/gateway/discord-channel-sessions.json`. Follow-up mentions in the
+same channel resume the same Codex session. Different channels can run in
+parallel; mentions in the same channel are serialized to avoid racing one Codex
+conversation.
+
+The prompt also tells Codex to use isolated git worktrees for complex parallel
+implementation work when appropriate. That keeps separate group channels or
+subtasks from editing the same checkout at once. If a runtime exposes subagents
+or delegation tools, Codex is instructed to use them for independent subtasks;
+otherwise it should continue locally and say that subagents are unavailable.
 
 It also seeds paused Codex app automation templates at `$CODEX_HOME/automation-templates/`. Set `STUDYOS_SEED_ACTIVE_AUTOMATIONS=true` only when the target `CODEX_HOME` is managed by a Codex app automation runner and you want the templates copied into `$CODEX_HOME/automations`.
 
@@ -122,6 +140,8 @@ docker compose -f docker-compose.agent.yml exec studyos-agent-gateway codex logi
 | `AGENT_WORKDIR` | Working directory for the agent command |
 | `AGENT_TIMEOUT_SECONDS` | Max runtime for one agent invocation |
 | `AGENT_AUTO_REVIEW_ENABLED` | Runs the agent on PR webhook events |
+| `AGENT_CHANNEL_SESSIONS_ENABLED` | Resume one Codex session per Discord channel when `AGENT_COMMAND` is `codex exec` |
+| `AGENT_SESSION_STORE_PATH` | Optional override for the Discord channel to Codex session JSON store |
 | `AGENT_WEBHOOK_URL` | Optional external agent endpoint instead of local CLI |
 
 See [`.env.example`](./.env.example) for all supported options.

@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     agent_workdir: str | None = None
     agent_timeout_seconds: int = 900
     agent_auto_review_enabled: bool = False
+    agent_channel_sessions_enabled: bool = True
+    agent_session_store_path: str | None = None
 
     github_poll_enabled: bool = False
     github_poll_interval_seconds: int = 1800
