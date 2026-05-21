@@ -32,6 +32,7 @@ studyos-agent-gateway = "study_discord_agent.main:main"
 studyos-discord-agent = "study_discord_agent.main:main"
 study-discord-agent = "study_discord_agent.main:main"
 studyos-discord-context = "study_discord_agent.discord_context_tool:main"
+studyos-render-diagram = "study_discord_agent.diagram_tool:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/study_discord_agent"]

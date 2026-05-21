@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     github_repository: str | None = None
 
     discord_message_agent_enabled: bool = True
+    discord_attachment_dir: str = "/tmp/studyos-discord-attachments"
+    discord_artifact_allowed_roots: str = "/tmp/studyos-artifacts,/workspaces,/workspace"
+    discord_artifact_max_bytes: int = 8_000_000
+    discord_proactive_agent_enabled: bool = False
+    discord_proactive_interval_seconds: int = 900
+    discord_proactive_recent_activity_seconds: int = 1800
+    discord_proactive_dry_run: bool = True
 
     agent_webhook_url: str | None = None
     agent_command: str | None = None
@@ -35,7 +42,11 @@ class Settings(BaseSettings):
     codex_home: str | None = None
     studyos_seed_active_automations: bool = False
 
-    @field_validator("discord_guild_id", "discord_pr_channel_id", mode="before")
+    @field_validator(
+        "discord_guild_id",
+        "discord_pr_channel_id",
+        mode="before",
+    )
     @classmethod
     def empty_string_to_none(cls, value: object) -> object:
         if value == "":
@@ -64,6 +75,14 @@ class Settings(BaseSettings):
     @cached_property
     def discord_token_value(self) -> str:
         return self.discord_token.get_secret_value()
+
+    @cached_property
+    def discord_artifact_allowed_root_list(self) -> tuple[str, ...]:
+        return tuple(
+            item.strip()
+            for item in self.discord_artifact_allowed_roots.split(",")
+            if item.strip()
+        )
 
 
 def load_settings() -> Settings:

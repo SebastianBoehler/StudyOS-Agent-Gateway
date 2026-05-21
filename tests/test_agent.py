@@ -3,7 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from study_discord_agent.agent import AgentGateway, build_codex_resume_args, extract_agent_result
+from study_discord_agent.agent import (
+    AgentGateway,
+    add_codex_image_args,
+    build_codex_resume_args,
+    extract_agent_result,
+)
 
 
 @pytest.mark.asyncio
@@ -75,6 +80,59 @@ def test_build_codex_resume_args_keeps_supported_options() -> None:
         "session-123",
         "-",
     ]
+
+
+def test_codex_image_args_are_inserted_before_prompt() -> None:
+    args = ["codex", "exec", "--json", "-"]
+    image = Path("/tmp/studyos-discord-attachments/1/input.png")
+
+    assert add_codex_image_args(args, (image,)) == [
+        "codex",
+        "exec",
+        "--json",
+        "-i",
+        str(image),
+        "-",
+    ]
+
+
+def test_codex_resume_args_include_image_inputs() -> None:
+    args = ["codex", "exec", "--json", "--cd", "/workspace", "-"]
+    image = Path("/tmp/studyos-discord-attachments/1/input.png")
+
+    resume_args = build_codex_resume_args(args, "session-123", (image,))
+
+    assert resume_args == [
+        "codex",
+        "exec",
+        "resume",
+        "--json",
+        "-i",
+        str(image),
+        "session-123",
+        "-",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_agent_command_extracts_artifact_reply(tmp_path: Path) -> None:
+    artifact = tmp_path / "diagram.png"
+    artifact.write_bytes(b"png")
+    command = (
+        f"{sys.executable} -c "
+        f"\"import json; print(json.dumps({{'message':'done','files':['{artifact}']}}))\""
+    )
+    agent = AgentGateway(
+        webhook_url=None,
+        command=command,
+        workdir=None,
+        timeout_seconds=10,
+    )
+
+    reply = await agent.ask("make diagram", user="student", channel_id=123)
+
+    assert reply.message == "done"
+    assert reply.files == (artifact,)
 
 
 @pytest.mark.asyncio

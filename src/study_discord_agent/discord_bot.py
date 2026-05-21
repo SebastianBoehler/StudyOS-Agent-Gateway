@@ -1,13 +1,20 @@
 import asyncio
 import logging
+from pathlib import Path
 
 import discord
 from discord.ext import commands
 
-from study_discord_agent.agent import AgentGateway
+from study_discord_agent.agent import AgentGateway, AgentReply
 from study_discord_agent.config import Settings
+from study_discord_agent.discord_files import (
+    DISCORD_MESSAGE_LIMIT,
+    save_message_attachments,
+    validate_artifact_files,
+)
 from study_discord_agent.github_client import GitHubClient
 from study_discord_agent.github_events import DiscordNotification
+from study_discord_agent.proactive import ProactiveMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +44,8 @@ class StudyBot(commands.Bot):
             self.tree.clear_commands(guild=None)
             await self.tree.sync()
         self.loop.create_task(self._notification_worker())
+        if self.settings.discord_proactive_agent_enabled:
+            self.loop.create_task(ProactiveMonitor(self, self.settings, self.agent).run())
 
     async def _notification_worker(self) -> None:
         await self.wait_until_ready()
@@ -65,7 +74,7 @@ class StudyBot(commands.Bot):
         )
         await channel.send(embed=embed)
         if notification.followup_message:
-            await channel.send(notification.followup_message[:1900])
+            await channel.send(notification.followup_message[:DISCORD_MESSAGE_LIMIT])
         if self.settings.agent_auto_review_enabled and notification.agent_prompt:
             try:
                 reply = await self.agent.ask(
@@ -73,7 +82,7 @@ class StudyBot(commands.Bot):
                     user="github-webhook",
                     channel_id=channel_id,
                 )
-                await channel.send(reply.message[:1900])
+                await channel.send(reply.message[:DISCORD_MESSAGE_LIMIT])
             except RuntimeError as exc:
                 await channel.send(f"Agent review failed: {exc}")
 
@@ -86,7 +95,7 @@ class StudyBot(commands.Bot):
             channel = await self.fetch_channel(channel_id)
         if not isinstance(channel, discord.abc.Messageable):
             raise RuntimeError("Configured Discord PR channel is not messageable")
-        await channel.send(message[:1900])
+        await channel.send(message[:DISCORD_MESSAGE_LIMIT])
 
     async def on_message(self, message: discord.Message) -> None:
         if not self.settings.discord_message_agent_enabled:
@@ -109,14 +118,40 @@ class StudyBot(commands.Bot):
 
         async with message.channel.typing():
             try:
+                attachments = await save_message_attachments(
+                    message,
+                    Path(self.settings.discord_attachment_dir),
+                )
                 reply = await self.agent.ask(
                     prompt=prompt,
                     user=str(message.author),
                     channel_id=message.channel.id,
                     source_message_id=message.id,
+                    attachment_paths=attachments,
                 )
-                await message.reply(reply.message[:1900])
+                await self._reply_to_message(message, reply)
                 logger.info("discord mention replied message_id=%s", message.id)
-            except RuntimeError as exc:
+            except (RuntimeError, discord.HTTPException) as exc:
                 await message.reply(f"Agent failed: {exc}")
                 logger.warning("discord mention failed message_id=%s error=%s", message.id, exc)
+
+    async def _reply_to_message(self, message: discord.Message, reply: AgentReply) -> None:
+        if not reply.files:
+            await message.reply(reply.message[:DISCORD_MESSAGE_LIMIT])
+            return
+
+        roots = tuple(Path(root) for root in self.settings.discord_artifact_allowed_root_list)
+        paths = validate_artifact_files(
+            reply.files,
+            roots,
+            self.settings.discord_artifact_max_bytes,
+        )
+        files = [discord.File(path) for path in paths]
+        try:
+            await message.reply(
+                content=reply.message[:DISCORD_MESSAGE_LIMIT] or None,
+                files=files,
+            )
+        finally:
+            for file in files:
+                file.close()

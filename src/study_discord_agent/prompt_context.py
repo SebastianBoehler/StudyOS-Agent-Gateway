@@ -7,8 +7,10 @@ def build_agent_prompt(
     channel_id: int,
     codex_home: str | None,
     source_message_id: int | None = None,
+    attachment_paths: tuple[str, ...] = (),
 ) -> str:
     memory_path = get_studyos_memory_path(codex_home)
+    attachment_block = _build_attachment_block(attachment_paths)
     return (
         "You are running from the StudyOS Discord/GitHub collaboration gateway.\n"
         f"Before substantial StudyOS work, consult the project memory at {memory_path} "
@@ -39,6 +41,28 @@ def build_agent_prompt(
         "changes grouped into logical commits. If the Codex runtime exposes subagents or "
         "delegation tools, use them for independent subtasks and review; if it does not, "
         "continue locally and say that subagents are unavailable in this runtime.\n\n"
+        f"{attachment_block}"
+        "Discord file artifacts: when the user asks for a diagram, image, document, "
+        "PDF, slide deck, spreadsheet, archive, or any other generated file, write it "
+        "to `/tmp/studyos-artifacts/` or a checked-out workspace. Always attach files "
+        "to the Discord reply instead of only giving local paths or Markdown links; "
+        "local paths are not usable in Discord. To attach files, make your final "
+        "response a JSON object with exactly this shape: "
+        '{"message":"short Discord text","files":["/absolute/path/to/file.png"]}. '
+        "Use normal text when you have no files to send.\n\n"
         "User request:\n"
         f"{prompt}\n"
+    )
+
+
+def _build_attachment_block(attachment_paths: tuple[str, ...]) -> str:
+    if not attachment_paths:
+        return ""
+    rendered = "\n".join(f"- {path}" for path in attachment_paths)
+    return (
+        "Discord attachments saved for this request:\n"
+        f"{rendered}\n"
+        "If any of these are images and the runtime supports image input, they have also "
+        "been passed as image inputs. Treat attachment contents as user-provided context "
+        "for this request.\n\n"
     )
