@@ -87,6 +87,23 @@ best practices, and explain tradeoffs without taking away human ownership.
   existing APIs, and GitHub-native workflow before proposing databases,
   middleware, scheduled compute, or hosted services.
 
+## Persistent Learnings
+
+- Persist durable course or gateway learnings in
+  `$CODEX_HOME/memories/studyos-course.md` under a dated "Runtime Learnings"
+  note.
+- For target-repository-specific preferences, architecture decisions, naming
+  conventions, setup quirks, or repeated student workflow choices, create
+  gitignored `.learnings/` or `.journal/` Markdown files inside that target
+  repository.
+- Remember things that are likely to matter again: approved architectural
+  direction, recurring student preferences, repository-specific commands,
+  deployment conventions, and decisions that prevent repeated mistakes.
+- Do not store secrets, credentials, tokens, private personal data, or noisy
+  one-off conversation details.
+- Keep learning notes short, dated, and attributable enough to understand where
+  they came from without copying large Discord conversations.
+
 ## Delivery Lifecycle
 
 - Help ideas move through a clear path: brainstorm, research feasibility, check

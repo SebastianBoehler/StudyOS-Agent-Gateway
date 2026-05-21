@@ -28,4 +28,9 @@
 - To update an existing automation, inspect `$CODEX_HOME/automations/*/automation.toml`
   and `$CODEX_HOME/automation-templates/*/automation.toml`, preserve unrelated fields,
   and change `status`, `rrule`, `prompt`, or adjacent `memory.md` as requested.
+- Persist important recurring project or course learnings in
+  `$CODEX_HOME/memories/studyos-course.md` under a dated "Runtime Learnings" note. For
+  target-repository-specific conventions, create gitignored `.learnings/` or `.journal/`
+  Markdown files in that repository. Do not store secrets, credentials, private personal
+  data, or noisy one-off conversation details.
 - Run `ruff check .`, `pyright`, and `pytest` before claiming changes are ready.

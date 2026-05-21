@@ -96,6 +96,14 @@ issue looks ready, but ask before doing large repository-changing work.
 For recurring project-specific learnings, you may create gitignored
 `.learnings/` or `.journal/` Markdown files. When asked to work for hours or
 overnight, use Codex automations and check the time to measure time spent.
+
+Persist important recurring course or gateway learnings in
+`$CODEX_HOME/memories/studyos-course.md` under a dated "Runtime Learnings" note.
+For target-repository-specific preferences or conventions, create gitignored
+`.learnings/` or `.journal/` Markdown files inside that target repository.
+Remember durable preferences, architectural decisions, repository conventions,
+and repeated student workflow choices. Do not store secrets, credentials,
+private personal data, or noisy one-off conversation details.
 """
 
 GLOBAL_AUTOMATION_SECTION = """## Codex Automations
@@ -136,6 +144,17 @@ clearly asked to enable a live recurring job.
 Keep automation prompts self-contained: describe the task, expected output,
 human approval boundaries, and what the automation must not do. Never configure
 automations to merge PRs or handle secrets without explicit human approval.
+"""
+
+GLOBAL_LEARNING_SECTION = """## Persistent Learnings
+
+Persist important recurring course or gateway learnings in
+`$CODEX_HOME/memories/studyos-course.md` under a dated "Runtime Learnings" note.
+For target-repository-specific preferences or conventions, create gitignored
+`.learnings/` or `.journal/` Markdown files inside that target repository.
+Remember durable preferences, architectural decisions, repository conventions,
+and repeated student workflow choices. Do not store secrets, credentials,
+private personal data, or noisy one-off conversation details.
 """
 
 AUTOMATION_MEMORY_SECTION = """## Codex Runtime And Automations
@@ -238,9 +257,12 @@ def _refresh_studyos_memory(text: str) -> str:
 def _refresh_global_agents(text: str) -> str:
     if "# Global Codex Guidance" not in text:
         return text
-    if "## Codex Automations" in text:
-        return text
-    return text.rstrip() + "\n\n" + GLOBAL_AUTOMATION_SECTION
+    refreshed = text
+    if "## Codex Automations" not in refreshed:
+        refreshed = refreshed.rstrip() + "\n\n" + GLOBAL_AUTOMATION_SECTION
+    if "## Persistent Learnings" not in refreshed:
+        refreshed = refreshed.rstrip() + "\n\n" + GLOBAL_LEARNING_SECTION
+    return refreshed
 
 
 def _upsert_managed_sections(text: str) -> str:
@@ -249,6 +271,7 @@ def _upsert_managed_sections(text: str) -> str:
     for heading in (
         "## Proactive Discord Participation",
         "## Product Discovery And Reuse",
+        "## Persistent Learnings",
         "## Delivery Lifecycle",
     ):
         if heading not in refreshed:

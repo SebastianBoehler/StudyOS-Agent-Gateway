@@ -15,6 +15,7 @@ def test_ensure_studyos_memory_creates_default_entrypoint(tmp_path: Path) -> Non
     assert "Discord-native thinking partner" in text
     assert "Proactive Discord Participation" in text
     assert "Product Discovery And Reuse" in text
+    assert "Persistent Learnings" in text
     assert "Delivery Lifecycle" in text
     assert "student-provided\n  repository URL" in text
     assert "Do not assume\n  the main wrapper repository" in text
@@ -65,6 +66,10 @@ def test_ensure_global_agents_creates_codex_home_guidance(tmp_path: Path) -> Non
     assert "$CODEX_HOME/automations/<automation-id>/automation.toml" in text
     assert "$CODEX_HOME/automation-templates/<template-id>/" in text
     assert "To pause or activate an automation, change `status`" in text
+    assert "$CODEX_HOME/memories/studyos-course.md" in text
+    assert "Runtime Learnings" in text
+    assert "Do not store secrets" in text
+    assert "Persistent Learnings" in text
 
 
 def test_ensure_global_agents_preserves_existing_file(tmp_path: Path) -> None:
@@ -87,6 +92,8 @@ def test_ensure_global_agents_refreshes_generated_guidance(tmp_path: Path) -> No
     assert "Existing generated guidance." in text
     assert "Codex Automations" in text
     assert "$CODEX_HOME/automations/*/automation.toml" in text
+    assert "Persistent Learnings" in text
+    assert "Runtime Learnings" in text
 
 
 def test_build_agent_prompt_points_to_memory(tmp_path: Path) -> None:
@@ -117,6 +124,7 @@ def test_ensure_studyos_memory_appends_missing_sections(tmp_path: Path) -> None:
     assert "Local notes stay here." in text
     assert "Proactive Discord Participation" in text
     assert "Product Discovery And Reuse" in text
+    assert "Persistent Learnings" in text
     assert "Delivery Lifecycle" in text
     assert "Codex Runtime And Automations" in text
     assert "Python heartbeat" not in text
@@ -135,6 +143,7 @@ def test_ensure_studyos_memory_repairs_incomplete_seed(tmp_path: Path) -> None:
     assert "Discord-native thinking partner" in text
     assert "attach it in the Discord reply" in text
     assert "Product Discovery And Reuse" in text
+    assert "Persistent Learnings" in text
 
 
 def test_default_memory_includes_credential_policy(tmp_path: Path) -> None:
@@ -145,3 +154,4 @@ def test_default_memory_includes_credential_policy(tmp_path: Path) -> None:
     assert "proceed if they confirm" in text
     assert "what data appears obtainable" in text
     assert "ask whether the group\n  wants an issue/spec" in text
+    assert "Runtime Learnings" in text
