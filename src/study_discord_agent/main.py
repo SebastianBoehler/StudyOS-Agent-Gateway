@@ -7,6 +7,7 @@ from study_discord_agent.agent import AgentGateway
 from study_discord_agent.automation_templates import seed_automation_templates
 from study_discord_agent.config import load_settings
 from study_discord_agent.discord_bot import StudyBot
+from study_discord_agent.git_identity import ensure_git_identity_from_gh
 from study_discord_agent.github_client import GitHubClient
 from study_discord_agent.github_events import DiscordNotification
 from study_discord_agent.memory import ensure_global_agents, ensure_studyos_memory
@@ -19,6 +20,7 @@ async def run() -> None:
     logging.basicConfig(level=settings.log_level.upper())
     ensure_global_agents(settings.codex_home)
     ensure_studyos_memory(settings.codex_home)
+    ensure_git_identity_from_gh()
     seed_automation_templates(settings.codex_home, settings.studyos_seed_active_automations)
 
     queue: asyncio.Queue[DiscordNotification] = asyncio.Queue()
