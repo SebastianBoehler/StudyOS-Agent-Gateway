@@ -28,6 +28,6 @@ Output:
 status = "PAUSED"
 rrule = "RRULE:FREQ=MINUTELY;INTERVAL=30"
 model = "gpt-5.5"
-reasoning_effort = "high"
+reasoning_effort = "medium"
 execution_environment = "local"
 cwds = ["/workspace"]

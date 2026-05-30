@@ -85,11 +85,12 @@ AGENT_WORKDIR=/workspaces
 docker compose -f docker-compose.agent.yml up --build
 ```
 
-Set the Codex defaults once inside the persisted `codex-auth` volume:
+The agent image seeds Codex defaults from `codex/config.toml` into
+`$CODEX_HOME/config.toml`:
 
 ```toml
 model = "gpt-5.5"
-model_reasoning_effort = "high"
+model_reasoning_effort = "medium"
 ```
 
 The agent image is only the harness: Discord/GitHub gateway, Codex CLI, GitHub

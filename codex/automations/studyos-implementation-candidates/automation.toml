@@ -15,6 +15,6 @@ Output ready candidates, why they are ready, and any remaining risks."""
 status = "PAUSED"
 rrule = "RRULE:FREQ=DAILY;BYHOUR=9;BYMINUTE=0"
 model = "gpt-5.5"
-reasoning_effort = "high"
+reasoning_effort = "medium"
 execution_environment = "local"
 cwds = ["/workspace"]

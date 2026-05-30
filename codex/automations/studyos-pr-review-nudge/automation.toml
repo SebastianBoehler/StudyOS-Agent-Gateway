@@ -15,6 +15,6 @@ reviewers if visible from GitHub metadata, and the smallest next action."""
 status = "PAUSED"
 rrule = "RRULE:FREQ=HOURLY;INTERVAL=2"
 model = "gpt-5.5"
-reasoning_effort = "high"
+reasoning_effort = "medium"
 execution_environment = "local"
 cwds = ["/workspace"]

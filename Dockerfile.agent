@@ -32,8 +32,10 @@ COPY pyproject.toml README.md LICENSE ./
 COPY codex ./codex
 COPY src ./src
 
+RUN mkdir -p "$CODEX_HOME" && cp ./codex/config.toml "$CODEX_HOME/config.toml"
+
 RUN pip install --no-cache-dir .
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "set -eu; if [ -d /app/codex/automations ]; then mkdir -p \"$CODEX_HOME/automations\"; cp -Rn /app/codex/automations/. \"$CODEX_HOME/automations/\"; fi; exec studyos-agent-gateway"]
+CMD ["sh", "-c", "set -eu; mkdir -p \"$CODEX_HOME\"; if [ -f /app/codex/config.toml ] && [ ! -f \"$CODEX_HOME/config.toml\" ]; then cp /app/codex/config.toml \"$CODEX_HOME/config.toml\"; fi; if [ -d /app/codex/automations ]; then mkdir -p \"$CODEX_HOME/automations\"; cp -Rn /app/codex/automations/. \"$CODEX_HOME/automations/\"; fi; exec studyos-agent-gateway"]

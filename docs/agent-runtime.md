@@ -19,11 +19,12 @@ course repository baked in or mounted at build time. Repositories can be cloned
 or fetched into the persistent `/workspaces` volume when students share GitHub
 URLs or ask the agent to work on a project.
 
-Set the default model in `$CODEX_HOME/config.toml` so every gateway invocation uses the same Codex profile:
+The agent image seeds `codex/config.toml` into `$CODEX_HOME/config.toml` so
+every gateway invocation uses the same Codex profile:
 
 ```toml
 model = "gpt-5.5"
-model_reasoning_effort = "high"
+model_reasoning_effort = "medium"
 ```
 
 The gateway also seeds `$CODEX_HOME/AGENTS.md` and
