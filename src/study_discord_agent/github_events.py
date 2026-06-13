@@ -12,6 +12,9 @@ class DiscordNotification:
     agent_prompt: str | None = None
 
 
+AGENT_COMMENT_MARKER = "<!-- studyos-agent -->"
+
+
 def notification_from_github_event(
     event_name: str,
     payload: dict[str, Any],
@@ -54,6 +57,8 @@ def _pull_request_notification(payload: dict[str, Any]) -> DiscordNotification |
             "Inspect the PR and decide the smallest useful next action. If a response is useful, "
             "prefer GitHub-native surfaces such as a PR comment or review comment. Use Discord "
             "only when course coordination clearly benefits from involving the group chat. "
+            "If you create a GitHub comment, end it with this hidden marker: "
+            f"{AGENT_COMMENT_MARKER}. "
             "Summarize intent, likely risk areas, useful review angles, and concrete next steps. "
             "Never merge the PR. Merging is reserved for StudyOS students through GitHub."
         )
@@ -115,6 +120,8 @@ def _issue_comment_notification(payload: dict[str, Any]) -> DiscordNotification 
     repo_name = str(repository["full_name"])
     author = str(sender["login"])
     body = str(comment.get("body", ""))
+    if AGENT_COMMENT_MARKER in body:
+        return None
 
     return DiscordNotification(
         title=f"Issue #{number} comment: {title}",
@@ -141,6 +148,7 @@ def _issue_refinement_prompt(
         "identify likely duplicates, suggest scope boundaries, and propose acceptance criteria. "
         "Prefer replying on the GitHub issue when a response is useful. Use Discord only when "
         "course coordination clearly benefits from involving the group chat. "
+        f"If you create a GitHub comment, end it with this hidden marker: {AGENT_COMMENT_MARKER}. "
         "Only move toward implementation when the intended behavior and constraints are clear. "
         "If implementation is ready and the runtime has repository access, create a branch and PR. "
         "Never merge PRs; StudyOS students merge through GitHub."

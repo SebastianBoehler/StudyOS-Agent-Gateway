@@ -1,4 +1,4 @@
-from study_discord_agent.github_events import notification_from_github_event
+from study_discord_agent.github_events import AGENT_COMMENT_MARKER, notification_from_github_event
 
 
 def test_pull_request_notification() -> None:
@@ -21,6 +21,8 @@ def test_pull_request_notification() -> None:
     assert notification.url == "https://github.com/org/repo/pull/7"
     assert notification.followup_message is not None
     assert "Humans own the final merge" in notification.followup_message
+    assert notification.agent_prompt is not None
+    assert AGENT_COMMENT_MARKER in notification.agent_prompt
 
 
 def test_issue_comment_notification_prompts_refinement() -> None:
@@ -42,6 +44,23 @@ def test_issue_comment_notification_prompts_refinement() -> None:
     assert notification.title == "Issue #12 comment: Clarify wrapper setup"
     assert notification.agent_prompt is not None
     assert "Ask clarifying questions" in notification.agent_prompt
+    assert AGENT_COMMENT_MARKER in notification.agent_prompt
+
+
+def test_issue_comment_with_agent_marker_is_ignored() -> None:
+    payload = {
+        "action": "created",
+        "issue": {
+            "number": 12,
+            "title": "Clarify wrapper setup",
+            "html_url": "https://github.com/org/repo/issues/12",
+        },
+        "comment": {"body": f"Follow-up from the agent.\n\n{AGENT_COMMENT_MARKER}"},
+        "repository": {"full_name": "org/repo"},
+        "sender": {"login": "student"},
+    }
+
+    assert notification_from_github_event("issue_comment", payload) is None
 
 
 def test_unsupported_event_is_ignored() -> None:
