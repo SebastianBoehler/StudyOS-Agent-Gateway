@@ -1,0 +1,4 @@
+interface:
+  display_name: "StudyOS Self Improvement"
+  short_description: "Persist durable StudyOS workflow learnings."
+  default_prompt: "Use $studyos-self-improvement to decide whether this StudyOS task produced a durable memory or reusable skill update, then apply the smallest safe update."

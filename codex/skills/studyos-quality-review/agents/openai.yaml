@@ -1,0 +1,4 @@
+interface:
+  display_name: "StudyOS Quality Review"
+  short_description: "Review StudyOS code for security and quality."
+  default_prompt: "Use $studyos-quality-review to review this StudyOS change for security, privacy, dead code, duplication, regressions, and missing validation."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "StudyOS Skill Expansion"
+  short_description: "Create or refine StudyOS workflow skills."
+  default_prompt: "Use $studyos-skill-expansion to turn this recurring StudyOS workflow into a focused Codex skill or skill patch."

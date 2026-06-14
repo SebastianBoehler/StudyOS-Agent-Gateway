@@ -35,6 +35,7 @@ COPY codex ./codex
 COPY src ./src
 
 RUN mkdir -p "$CODEX_HOME" && cp ./codex/config.toml "$CODEX_HOME/config.toml"
+RUN if [ -d ./codex/skills ]; then mkdir -p /etc/codex/skills && cp -R ./codex/skills/. /etc/codex/skills/; fi
 
 RUN pip install --no-cache-dir .
 
