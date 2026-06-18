@@ -32,6 +32,10 @@ class DiscordWorktreeManager:
         channel_root = self._worktree_root / str(channel_id)
         repo_names = extract_org_repo_names(prompt, self._org_name)
         if len(repo_names) != 1:
+            if not repo_names:
+                existing = await self._single_existing_repo_worktree(channel_root)
+                if existing is not None:
+                    return existing
             channel_root.mkdir(parents=True, exist_ok=True)
             return DiscordWorkspace(path=channel_root)
 
@@ -45,6 +49,29 @@ class DiscordWorktreeManager:
             repo_name=repo_name,
             canonical_path=canonical_path,
         )
+
+    async def _single_existing_repo_worktree(
+        self,
+        channel_root: Path,
+    ) -> DiscordWorkspace | None:
+        if not channel_root.is_dir():
+            return None
+
+        workspaces: list[DiscordWorkspace] = []
+        for child in channel_root.iterdir():
+            if not child.is_dir() or not await _is_git_worktree(child):
+                continue
+            canonical_path = self._canonical_root / child.name
+            workspaces.append(
+                DiscordWorkspace(
+                    path=child,
+                    repo_name=child.name,
+                    canonical_path=canonical_path if canonical_path.exists() else None,
+                ),
+            )
+        if len(workspaces) != 1:
+            return None
+        return workspaces[0]
 
     async def _ensure_canonical_repo(self, repo_name: str, path: Path) -> None:
         if path.exists():
