@@ -76,6 +76,13 @@ def test_build_agent_prompt_includes_discord_origin_context(tmp_path: Path) -> N
     assert "Parent channel: group-4-service-aggregation (id=123)" in prompt
 
 
+def test_build_agent_prompt_discourages_discord_tables(tmp_path: Path) -> None:
+    prompt = build_agent_prompt("rank these", "student", 456, str(tmp_path), 789)
+
+    assert "do not use Markdown tables in Discord replies" in prompt
+    assert "Use bullets, numbered lists, or short labeled sections" in prompt
+
+
 @pytest.mark.asyncio
 async def test_fetch_context_requires_token() -> None:
     with pytest.raises(RuntimeError, match="DISCORD_TOKEN"):

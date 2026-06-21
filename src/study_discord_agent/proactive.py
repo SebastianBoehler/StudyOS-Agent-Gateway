@@ -7,6 +7,7 @@ import discord
 
 from study_discord_agent.agent import AgentGateway
 from study_discord_agent.config import Settings
+from study_discord_agent.discord_markdown import discord_safe_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +128,7 @@ class ProactiveMonitor:
             user="discord-proactive-monitor",
             channel_id=channel_id,
         )
-        text = reply.message.strip()
+        text = discord_safe_markdown(reply.message).strip()
         if not text or text == "NO_ACTION":
             logger.info("proactive no-action channel_id=%s", channel_id)
             return

@@ -13,6 +13,7 @@ from study_discord_agent.discord_files import (
     save_message_attachments,
     validate_artifact_files,
 )
+from study_discord_agent.discord_markdown import discord_safe_markdown
 from study_discord_agent.discord_message_context import (
     is_cancel_prompt,
     origin_context_from_message,
@@ -87,7 +88,9 @@ class StudyBot(commands.Bot):
             )
             await channel.send(embed=embed)
             if notification.followup_message:
-                await channel.send(notification.followup_message[:DISCORD_MESSAGE_LIMIT])
+                await channel.send(
+                    _discord_text(notification.followup_message),
+                )
         if self.settings.agent_auto_review_enabled and notification.agent_prompt:
             try:
                 reply = await self.agent.ask(
@@ -96,7 +99,7 @@ class StudyBot(commands.Bot):
                     channel_id=channel_id,
                 )
                 if channel is not None:
-                    await channel.send(reply.message[:DISCORD_MESSAGE_LIMIT])
+                    await channel.send(_discord_text(reply.message))
             except RuntimeError as exc:
                 if channel is not None:
                     await channel.send(f"Agent review failed: {exc}")
@@ -116,7 +119,7 @@ class StudyBot(commands.Bot):
             channel = await self.fetch_channel(channel_id)
         if not isinstance(channel, discord.abc.Messageable):
             raise RuntimeError("Configured Discord PR channel is not messageable")
-        await channel.send(message[:DISCORD_MESSAGE_LIMIT])
+        await channel.send(_discord_text(message))
 
     async def on_message(self, message: discord.Message) -> None:
         if not self.settings.discord_message_agent_enabled:
@@ -238,7 +241,7 @@ class StudyBot(commands.Bot):
 
     async def _reply_to_message(self, message: discord.Message, reply: AgentReply) -> None:
         if not reply.files:
-            await message.reply(reply.message[:DISCORD_MESSAGE_LIMIT])
+            await message.reply(_discord_text(reply.message))
             return
 
         roots = tuple(Path(root) for root in self.settings.discord_artifact_allowed_root_list)
@@ -250,7 +253,7 @@ class StudyBot(commands.Bot):
         files = [discord.File(path) for path in paths]
         try:
             await message.reply(
-                content=reply.message[:DISCORD_MESSAGE_LIMIT] or None,
+                content=_discord_text(reply.message) or None,
                 files=files,
             )
         finally:
@@ -266,3 +269,6 @@ async def _await_cancelled_task(task: asyncio.Task[None]) -> None:
     except Exception as exc:
         logger.warning("cancelled discord mention task ended with error: %s", exc)
 
+
+def _discord_text(message: str) -> str:
+    return discord_safe_markdown(message)[:DISCORD_MESSAGE_LIMIT]
